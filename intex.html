@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChairIQ — Smart Posture Monitor</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #f4f1ec;
+    --white:    #ffffff;
+    --ink:      #1c1917;
+    --muted:    #6b6560;
+    --border:   #e0dbd3;
+    --amber:    #c97d2e;
+    --amber-lt: #fdf3e3;
+    --green:    #2e7d32;
+    --green-lt: #e8f5e9;
+    --red:      #c62828;
+    --red-lt:   #ffebee;
+    --yellow:   #f57f17;
+    --yellow-lt:#fff8e1;
+    --blue:     #1565c0;
+    --blue-lt:  #e3f2fd;
+    --shadow:   0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
+    --shadow-lg:0 8px 32px rgba(0,0,0,0.12);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-icon {
+    width: 30px; height: 30px;
+    background: var(--ink);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+  }
+  .logo-text {
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+  }
+  .logo-text span { color: var(--amber); }
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .live-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: blink 2s infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .hdr-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* ── LAYOUT ── */
+  .app {
+    display: grid;
+    grid-template-columns: 300px 1fr 260px;
+    gap: 0;
+    height: calc(100vh - 56px);
+  }
+
+  /* ── PANELS ── */
+  .panel {
+    background: var(--white);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .panel.right {
+    border-right: none;
+    border-left: 1px solid var(--border);
+  }
+
+  .section-title {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  /* ── CHAIR SVG AREA ── */
+  .main-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+    padding: 32px;
+    background: var(--bg);
+    position: relative;
+    overflow: hidden;
+  }
+  .main-area::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle, #d4cfc7 1px, transparent 1px);
+    background-size: 24px 24px;
+    opacity: 0.5;
+  }
+
+  .chair-wrapper {
+    position: relative;
+    z-index: 1;
+  }
+
+  .status-banner {
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 28px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: var(--shadow);
+    z-index: 1;
+    position: relative;
+    min-width: 360px;
+    justify-content: center;
+  }
+  .status-icon { font-size: 26px; }
+  .status-text h2 {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+  }
+  .status-text p {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  /* ── SLIDERS ── */
+  .slider-group { display: flex; flex-direction: column; gap: 14px; }
+  .slider-item { display: flex; flex-direction: column; gap: 6px; }
+  .slider-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .slider-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .slider-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--amber);
+  }
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border);
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--white);
+    border: 2px solid var(--ink);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+  /* ── POSTURE INDICATOR BAR ── */
+  .posture-bar-wrap {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--border);
+    overflow: hidden;
+    margin-top: 2px;
+  }
+  .posture-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.4s ease, background 0.4s ease;
+  }
+
+  /* ── METRIC CARDS ── */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .metric-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    transition: border-color 0.3s;
+  }
+  .metric-card.alert { border-color: var(--red); background: var(--red-lt); }
+  .metric-card.warn  { border-color: var(--yellow); background: var(--yellow-lt); }
+  .metric-card.good  { border-color: var(--green); background: var(--green-lt); }
+  .metric-val {
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -1px;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .metric-lbl {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ── SENSOR READOUTS ── */
+  .sensor-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .sensor-box {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    background: var(--bg);
+    transition: all 0.3s;
+  }
+  .sensor-box.active {
+    border-color: var(--amber);
+    background: var(--amber-lt);
+  }
+  .sensor-name {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .sensor-reading {
+    font-family: 'DM Mono', monospace;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .sensor-bar {
+    height: 3px;
+    border-radius: 2px;
+    background: var(--border);
+    margin-top: 6px;
+    overflow: hidden;
+  }
+  .sensor-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: var(--amber);
+    transition: width 0.3s;
+  }
+
+  /* ── LED INDICATORS ── */
+  .led-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .led-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+  }
+  .led {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #ccc;
+    box-shadow: 0 0 0 2px #e0e0e0;
+    transition: all 0.3s;
+  }
+  .led.on-red    { background: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,0.6), 0 0 0 2px #fca5a5; }
+  .led.on-green  { background: #22c55e; box-shadow: 0 0 8px rgba(34,197,94,0.6),  0 0 0 2px #86efac; }
+  .led.on-yellow { background: #eab308; box-shadow: 0 0 8px rgba(234,179,8,0.6),  0 0 0 2px #fde047; animation: blink 0.6s infinite; }
+  .led-label {
+    font-size: 9px;
+    font-weight: 500;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  /* ── BUZZER ── */
+  .buzzer-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    transition: all 0.3s;
+  }
+  .buzzer-indicator.active {
+    border-color: var(--red);
+    background: var(--red-lt);
+    color: var(--red);
+  }
+  .buzzer-icon { font-size: 16px; }
+
+  /* ── LCD ── */
+  .lcd {
+    background: #1a2e1a;
+    border: 3px solid #2d4a2d;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: #7dda58;
+    text-shadow: 0 0 6px rgba(125,218,88,0.5);
+    line-height: 1.9;
+    letter-spacing: 0.5px;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.4);
+    min-height: 60px;
+  }
+  .lcd-row { display: block; white-space: pre; overflow: hidden; }
+
+  /* ── SERIAL LOG ── */
+  .serial-log {
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 10px 12px;
+    height: 120px;
+    overflow-y: auto;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: #a3e635;
+    line-height: 1.7;
+  }
+  .serial-log .s-warn { color: #facc15; }
+  .serial-log .s-err  { color: #f87171; }
+  .serial-log .s-ok   { color: #86efac; }
+
+  /* ── TIMELINE BAR ── */
+  .timeline {
+    display: flex;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--border);
+    position: relative;
+  }
+  .timeline-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1s linear, background 0.5s;
+  }
+  .timeline-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    margin-top: 4px;
+  }
+
+  /* ── BUTTONS ── */
+  .btn-row { display: flex; gap: 8px; }
+  .btn {
+    flex: 1;
+    padding: 9px 12px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--ink);
+    transition: all 0.15s;
+  }
+  .btn:hover { border-color: var(--ink); background: var(--bg); }
+  .btn.primary {
+    background: var(--ink);
+    color: white;
+    border-color: var(--ink);
+  }
+  .btn.primary:hover { background: #333; }
+  .btn.danger {
+    border-color: var(--red);
+    color: var(--red);
+  }
+  .btn.danger:hover { background: var(--red-lt); }
+
+  /* ── CHAIR SVG ── */
+  #chairSvg { filter: drop-shadow(0 8px 24px rgba(0,0,0,0.12)); }
+
+  /* ── SCORE RING ── */
+  .score-ring-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    z-index: 1;
+    position: relative;
+  }
+  .score-ring svg { transform: rotate(-90deg); }
+  .score-num {
+    font-size: 32px;
+    font-weight: 600;
+    letter-spacing: -2px;
+    margin-top: -6px;
+    transition: color 0.3s;
+  }
+  .score-lbl {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* DIVIDER */
+  .divider { height: 1px; background: var(--border); margin: 0 -20px; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* POSTURE TAG */
+  .posture-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    border: 1.5px solid;
+    transition: all 0.3s;
+  }
+
+  /* HISTORY DOTS */
+  .history-row {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+  }
+  .h-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: background 0.3s;
+    flex-shrink: 0;
+  }
+  .h-dot.good   { background: var(--green); }
+  .h-dot.warn   { background: var(--yellow); }
+  .h-dot.bad    { background: var(--red); }
+
+  /* SESSION STRIP */
+  .session-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .session-row:last-child { border-bottom: none; }
+  .session-key { font-size: 12px; color: var(--muted); }
+  .session-val { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500; }
+
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 1fr; height: auto; }
+    .panel { border-right: none; border-bottom: 1px solid var(--border); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🪑</div>
+    <div class="logo-text">Chair<span>IQ</span></div>
+  </div>
+  <div class="header-right">
+    <div class="live-badge"><div class="live-dot"></div> Live Monitor</div>
+    <div class="hdr-time" id="hdr-time">00:00:00</div>
+  </div>
+</header>
+
+<div class="app">
+
+  <!-- LEFT PANEL -->
+  <div class="panel">
+
+    <!-- Pressure sliders -->
+    <div>
+      <div class="section-title">Pressure Sensors</div>
+      <div class="slider-group">
+        <div class="slider-item">
+          <div class="slider-header">
+            <span class="slider-label">⬆ Front Seat</span>
+            <span class="slider-val" id="v-front">0%</span>
+          </div>
+          <input type="range" id="s-front" min="0" max="100" value="75" oninput="update()">
+          <div class="posture-bar-wrap"><div class="posture-bar-fill" id="b-front" style="width:75%;background:var(--amber)"></div></div>
+        </div>
+        <div class="slider-item">
+          <div class="slider-header">
+            <span class="slider-label">⬇ Back Seat</span>
+            <span class="slider-val" id="v-back">0%</span>
+          </div>
+          <input type="range" id="s-back" min="0" max="100" value="60" oninput="update()">
+          <div class="posture-bar-wrap"><div class="posture-bar-fill" id="b-back" style="width:60%;background:var(--amber)"></div></div>
+        </div>
+        <div class="slider-item">
+          <div class="slider-header">
+            <span class="slider-label">⬅ Left Side</span>
+            <span class="slider-val" id="v-left">0%</span>
+          </div>
+          <input type="range" id="s-left" min="0" max="100" value="65" oninput="update()">
+          <div class="posture-bar-wrap"><div class="posture-bar-fill" id="b-left" style="width:65%;background:var(--amber)"></div></div>
+        </div>
+        <div class="slider-item">
+          <div class="slider-header">
+            <span class="slider-label">➡ Right Side</span>
+            <span class="slider-val" id="v-right">0%</span>
+          </div>
+          <input type="range" id="s-right" min="0" max="100" value="68" oninput="update()">
+          <div class="posture-bar-wrap"><div class="posture-bar-fill" id="b-right" style="width:68%;background:var(--amber)"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Controls -->
+    <div>
+      <div class="section-title">Simulation</div>
+      <div class="btn-row" style="margin-bottom:8px">
+        <button class="btn primary" id="btn-start" onclick="toggleSim()">▶ Start</button>
+        <button class="btn" onclick="resetSim()">↺ Reset</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="setPosture('good')">✓ Good Posture</button>
+        <button class="btn" onclick="setPosture('hunch')">↓ Hunch</button>
+      </div>
+      <div class="btn-row" style="margin-top:8px">
+        <button class="btn" onclick="setPosture('lean-left')">← Lean Left</button>
+        <button class="btn" onclick="setPosture('lean-right')">→ Lean Right</button>
+      </div>
+      <div class="btn-row" style="margin-top:8px">
+        <button class="btn" onclick="setPosture('slouch')">↑ Slouch</button>
+        <button class="btn danger" onclick="setPosture('empty')">✕ Stand Up</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Sitting timer -->
+    <div>
+      <div class="section-title">Sitting Timer</div>
+      <div class="timeline">
+        <div class="timeline-fill" id="timeline-fill" style="width:0%"></div>
+      </div>
+      <div class="timeline-labels">
+        <span>0 min</span><span>30 min</span><span>45 min</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CENTER -->
+  <div class="main-area">
+
+    <!-- Status banner -->
+    <div class="status-banner" id="status-banner">
+      <div class="status-icon" id="status-icon">💺</div>
+      <div class="status-text">
+        <h2 id="status-title">Chair Empty</h2>
+        <p id="status-sub">Sit down to begin monitoring</p>
+      </div>
+    </div>
+
+    <!-- Chair SVG -->
+    <div class="chair-wrapper">
+      <svg id="chairSvg" width="320" height="340" viewBox="0 0 320 340" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Shadow -->
+        <ellipse cx="160" cy="330" rx="90" ry="10" fill="#00000015"/>
+        <!-- Legs -->
+        <rect x="72" y="240" width="12" height="70" rx="6" fill="#c8bfb0"/>
+        <rect x="236" y="240" width="12" height="70" rx="6" fill="#c8bfb0"/>
+        <rect x="88" y="290" width="12" height="40" rx="6" fill="#c8bfb0"/>
+        <rect x="220" y="290" width="12" height="40" rx="6" fill="#c8bfb0"/>
+        <!-- Seat -->
+        <rect id="seat" x="60" y="200" width="200" height="50" rx="10" fill="#e8e0d5" stroke="#d4c9b8" stroke-width="1.5"/>
+        <!-- Pressure zones on seat -->
+        <rect id="zone-front" x="70" y="235" width="180" height="10" rx="4" fill="#c97d2e" opacity="0.0" style="transition:opacity 0.4s"/>
+        <rect id="zone-back"  x="70" y="207" width="180" height="10" rx="4" fill="#1565c0" opacity="0.0" style="transition:opacity 0.4s"/>
+        <rect id="zone-left"  x="65" y="207" width="10" height="38"  rx="4" fill="#2e7d32" opacity="0.0" style="transition:opacity 0.4s"/>
+        <rect id="zone-right" x="245" y="207" width="10" height="38" rx="4" fill="#c62828" opacity="0.0" style="transition:opacity 0.4s"/>
+        <!-- Seat cushion texture lines -->
+        <line x1="160" y1="205" x2="160" y2="245" stroke="#d4c9b8" stroke-width="0.8" opacity="0.5"/>
+        <!-- Chair back -->
+        <rect id="chairback" x="70" y="80" width="180" height="120" rx="12" fill="#e8e0d5" stroke="#d4c9b8" stroke-width="1.5"/>
+        <!-- Back cushion -->
+        <rect x="82" y="92" width="156" height="96" rx="8" fill="#ede5d8"/>
+        <!-- Lumbar support -->
+        <rect x="95" y="140" width="130" height="28" rx="6" fill="#e0d5c5" stroke="#d4c9b8" stroke-width="1"/>
+        <!-- Armrests -->
+        <rect x="44" y="185" width="24" height="50" rx="8" fill="#d4c9b8"/>
+        <rect x="252" y="185" width="24" height="50" rx="8" fill="#d4c9b8"/>
+        <!-- Person (shown when seated) -->
+        <g id="person" opacity="0">
+          <!-- Body -->
+          <ellipse cx="160" cy="215" rx="45" ry="28" fill="#fbbf24" opacity="0.25"/>
+          <!-- Head -->
+          <circle cx="160" cy="110" r="26" fill="#f5e6cc" stroke="#e8d5b0" stroke-width="1.5"/>
+          <!-- Torso -->
+          <rect x="138" y="135" width="44" height="65" rx="8" fill="#4b6fa5" opacity="0.85"/>
+          <!-- Arms -->
+          <rect x="112" y="140" width="28" height="14" rx="7" fill="#4b6fa5" opacity="0.85"/>
+          <rect x="180" y="140" width="28" height="14" rx="7" fill="#4b6fa5" opacity="0.85"/>
+          <!-- Legs -->
+          <rect x="138" y="196" width="18" height="35" rx="6" fill="#2d3748" opacity="0.85"/>
+          <rect x="164" y="196" width="18" height="35" rx="6" fill="#2d3748" opacity="0.85"/>
+          <!-- Face features -->
+          <circle cx="152" cy="107" r="3" fill="#5a3e2b"/>
+          <circle cx="168" cy="107" r="3" fill="#5a3e2b"/>
+          <path d="M 152 118 Q 160 124 168 118" stroke="#5a3e2b" stroke-width="1.5" fill="none" stroke-linecap="round" id="mouth"/>
+        </g>
+        <!-- Lean arrows (hidden by default) -->
+        <g id="arrow-left" opacity="0" style="transition:opacity 0.3s">
+          <path d="M 140 160 L 100 160" stroke="#f59e0b" stroke-width="3" stroke-linecap="round"/>
+          <path d="M 108 152 L 100 160 L 108 168" stroke="#f59e0b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </g>
+        <g id="arrow-right" opacity="0" style="transition:opacity 0.3s">
+          <path d="M 180 160 L 220 160" stroke="#f59e0b" stroke-width="3" stroke-linecap="round"/>
+          <path d="M 212 152 L 220 160 L 212 168" stroke="#f59e0b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </g>
+        <g id="arrow-hunch" opacity="0" style="transition:opacity 0.3s">
+          <path d="M 160 180 L 160 210" stroke="#ef4444" stroke-width="3" stroke-linecap="round"/>
+          <path d="M 152 202 L 160 210 L 168 202" stroke="#ef4444" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </g>
+        <!-- Sensor dots on chair -->
+        <circle id="dot-front" cx="160" cy="240" r="5" fill="#c97d2e" opacity="0.4"/>
+        <circle id="dot-back"  cx="160" cy="210" r="5" fill="#c97d2e" opacity="0.4"/>
+        <circle id="dot-left"  cx="85"  cy="225" r="5" fill="#c97d2e" opacity="0.4"/>
+        <circle id="dot-right" cx="235" cy="225" r="5" fill="#c97d2e" opacity="0.4"/>
+      </svg>
+    </div>
+
+    <!-- Posture score ring -->
+    <div class="score-ring-wrap">
+      <svg width="90" height="90" viewBox="0 0 90 90">
+        <circle cx="45" cy="45" r="36" stroke="#e0dbd3" stroke-width="7" fill="none"/>
+        <circle id="score-ring" cx="45" cy="45" r="36" stroke="#22c55e" stroke-width="7" fill="none"
+          stroke-dasharray="226" stroke-dashoffset="0"
+          stroke-linecap="round" style="transition: stroke-dashoffset 0.6s, stroke 0.4s"/>
+      </svg>
+      <div class="score-num" id="score-num" style="color:var(--green)">100</div>
+      <div class="score-lbl">Posture Score</div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="panel right">
+
+    <!-- Current posture -->
+    <div>
+      <div class="section-title">Current Posture</div>
+      <div id="posture-tag" class="posture-tag" style="color:var(--muted);border-color:var(--border);background:var(--bg)">
+        💺 EMPTY
+      </div>
+      <p style="font-size:11px;color:var(--muted);margin-top:8px" id="posture-detail">Waiting for user to sit down.</p>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Sensor readouts -->
+    <div>
+      <div class="section-title">Sensor Readings</div>
+      <div class="sensor-grid">
+        <div class="sensor-box" id="sb-front">
+          <div class="sensor-name">Front</div>
+          <div class="sensor-reading" id="sr-front">0</div>
+          <div class="sensor-bar"><div class="sensor-bar-fill" id="sbf-front" style="width:0%"></div></div>
+        </div>
+        <div class="sensor-box" id="sb-back">
+          <div class="sensor-name">Back</div>
+          <div class="sensor-reading" id="sr-back">0</div>
+          <div class="sensor-bar"><div class="sensor-bar-fill" id="sbf-back" style="width:0%"></div></div>
+        </div>
+        <div class="sensor-box" id="sb-left">
+          <div class="sensor-name">Left</div>
+          <div class="sensor-reading" id="sr-left">0</div>
+          <div class="sensor-bar"><div class="sensor-bar-fill" id="sbf-left" style="width:0%"></div></div>
+        </div>
+        <div class="sensor-box" id="sb-right">
+          <div class="sensor-name">Right</div>
+          <div class="sensor-reading" id="sr-right">0</div>
+          <div class="sensor-bar"><div class="sensor-bar-fill" id="sbf-right" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Hardware indicators -->
+    <div>
+      <div class="section-title">Hardware Status</div>
+      <div class="led-row" style="margin-bottom:12px">
+        <div class="led-item">
+          <div class="led" id="led-red"></div>
+          <div class="led-label">Danger</div>
+        </div>
+        <div class="led-item">
+          <div class="led" id="led-green"></div>
+          <div class="led-label">Safe</div>
+        </div>
+        <div class="led-item">
+          <div class="led" id="led-yellow"></div>
+          <div class="led-label">Warn</div>
+        </div>
+        <div class="buzzer-indicator" id="buzzer" style="margin-left:auto">
+          <span class="buzzer-icon">🔔</span>
+          <span id="buzzer-txt">Silent</span>
+        </div>
+      </div>
+
+      <!-- LCD -->
+      <div class="section-title" style="margin-top:4px">LCD Display</div>
+      <div class="lcd">
+        <span class="lcd-row" id="lcd1">  ChairIQ v1.0  </span>
+        <span class="lcd-row" id="lcd2">   Waiting...   </span>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Session stats -->
+    <div>
+      <div class="section-title">Session Stats</div>
+      <div class="session-row">
+        <span class="session-key">Sit Time</span>
+        <span class="session-val" id="sit-time">0 min</span>
+      </div>
+      <div class="session-row">
+        <span class="session-key">Stands</span>
+        <span class="session-val" id="stat-stands">0</span>
+      </div>
+      <div class="session-row">
+        <span class="session-key">Alerts</span>
+        <span class="session-val" id="stat-alerts">0</span>
+      </div>
+      <div class="session-row">
+        <span class="session-key">Avg Score</span>
+        <span class="session-val" id="stat-avg">—</span>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- History -->
+    <div>
+      <div class="section-title">Posture History</div>
+      <div class="history-row" id="history-row">
+        <span style="font-size:10px;color:var(--muted)">No data yet</span>
+      </div>
+    </div>
+
+    <!-- Serial -->
+    <div>
+      <div class="section-title">Serial Monitor</div>
+      <div class="serial-log" id="serial-log">
+        <div class="s-ok">ChairIQ v1.0 — System Ready</div>
+        <div>Waiting for sensor input...</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────
+let running     = false;
+let seated      = false;
+let sitStart    = null;
+let sitMinutes  = 0;
+let stands      = 0;
+let alerts      = 0;
+let scoreHistory= [];
+let historyDots = [];
+let lcdPage     = 0;
+let lcdTimer    = null;
+let clockTimer  = null;
+let simTimer    = null;
+let lastBuzz    = 0;
+let startTime   = Date.now();
+
+// ── HELPERS ────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+function getVals() {
+  return {
+    front: parseInt($('s-front').value),
+    back:  parseInt($('s-back').value),
+    left:  parseInt($('s-left').value),
+    right: parseInt($('s-right').value),
+  };
+}
+function avg4(v) { return (v.front + v.back + v.left + v.right) / 4; }
+
+// ── POSTURE ANALYSIS ──────────────────────────────────────────
+function analyzePosture(v) {
+  const total = avg4(v);
+  if (total < 25) return { status:'EMPTY',      detail:'Chair is empty — no one seated.',           cls:'',      icon:'💺' };
+  const lrDiff = v.left - v.right;
+  const fbDiff = v.front - v.back;
+  if (Math.abs(lrDiff) > 30 && lrDiff > 0) return { status:'LEAN LEFT',   detail:'More pressure on left side. Straighten up!', cls:'warn', icon:'⬅' };
+  if (Math.abs(lrDiff) > 30 && lrDiff < 0) return { status:'LEAN RIGHT',  detail:'More pressure on right side. Even it out!',  cls:'warn', icon:'➡' };
+  if (fbDiff > 28)                          return { status:'HUNCHING',    detail:'You are bending forward. Sit back!',         cls:'bad',  icon:'⚠️' };
+  if (v.back - v.front > 28)               return { status:'SLOUCHING',   detail:'Slouching backward. Lumbar at risk!',        cls:'bad',  icon:'⚠️' };
+  if (total > 60)                           return { status:'GOOD',        detail:'Great posture! Keep it up.',                 cls:'good', icon:'✓' };
+  return                                           { status:'SEATED',      detail:'Posture looks okay. Stay aware.',            cls:'good', icon:'🪑' };
+}
+
+// ── MAIN UPDATE ───────────────────────────────────────────────
+function update() {
+  const v    = getVals();
+  const p    = analyzePosture(v);
+  const total= avg4(v);
+  const isNowSeated = total >= 25;
+
+  // Slider visual bars
+  ['front','back','left','right'].forEach(k => {
+    const val = v[k];
+    $('v-'+k).textContent = val + '%';
+    $('b-'+k).style.width = val + '%';
+    $('b-'+k).style.background = val > 70 ? 'var(--amber)' : val > 40 ? 'var(--yellow)' : 'var(--border)';
+    $('sr-'+k).textContent = Math.round(val * 40.95);
+    $('sbf-'+k).style.width = val + '%';
+    $('sb-'+k).className = 'sensor-box' + (val > 50 ? ' active' : '');
+  });
+
+  // Seated detection
+  if (isNowSeated && !seated) {
+    seated = true;
+    sitStart = Date.now();
+    addSerial('Person seated — posture tracking started.', 'ok');
+  }
+  if (!isNowSeated && seated) {
+    seated = false;
+    stands++;
+    $('stat-stands').textContent = stands;
+    addSerial('Person stood up. Session ended.', 'warn');
+    sitStart = null;
+  }
+
+  // Sit time
+  sitMinutes = seated && sitStart ? Math.floor((Date.now() - sitStart) / 60000) : 0;
+  $('sit-time').textContent = sitMinutes + ' min';
+
+  // Timeline
+  const pct = Math.min(sitMinutes / 45 * 100, 100);
+  $('timeline-fill').style.width = pct + '%';
+  $('timeline-fill').style.background =
+    pct > 88 ? 'var(--red)' : pct > 66 ? 'var(--yellow)' : 'var(--green)';
+
+  // Posture score
+  let score = 100;
+  if (!isNowSeated) score = 100;
+  else if (p.cls === 'bad')  score = Math.max(20, 55 - Math.abs(v.front-v.back) - Math.abs(v.left-v.right));
+  else if (p.cls === 'warn') score = Math.max(40, 78 - Math.max(Math.abs(v.left-v.right), Math.abs(v.front-v.back)));
+  else score = Math.min(100, 70 + (total - 60) * 0.5);
+  score = Math.round(Math.max(0, Math.min(100, score)));
+
+  const ring  = $('score-ring');
+  const circ  = 2 * Math.PI * 36;
+  ring.style.strokeDashoffset = circ - (score / 100) * circ;
+  ring.style.stroke = score >= 75 ? '#22c55e' : score >= 50 ? '#eab308' : '#ef4444';
+  $('score-num').textContent = score;
+  $('score-num').style.color = score >= 75 ? 'var(--green)' : score >= 50 ? 'var(--yellow)' : 'var(--red)';
+
+  // Score history
+  if (isNowSeated) {
+    scoreHistory.push(score);
+    if (scoreHistory.length > 20) scoreHistory.shift();
+    const avg = Math.round(scoreHistory.reduce((a,b)=>a+b,0)/scoreHistory.length);
+    $('stat-avg').textContent = avg + '%';
+  }
+
+  // SVG person
+  $('person').style.opacity = isNowSeated ? '1' : '0';
+  $('person').style.transition = 'opacity 0.5s';
+
+  // Posture arrows
+  $('arrow-left').style.opacity  = p.status==='LEAN LEFT'  ? '1' : '0';
+  $('arrow-right').style.opacity = p.status==='LEAN RIGHT' ? '1' : '0';
+  $('arrow-hunch').style.opacity = p.status==='HUNCHING'   ? '1' : '0';
+
+  // Pressure zones on SVG
+  $('zone-front').style.opacity = (v.front/100 * 0.7).toString();
+  $('zone-back').style.opacity  = (v.back/100  * 0.7).toString();
+  $('zone-left').style.opacity  = (v.left/100  * 0.7).toString();
+  $('zone-right').style.opacity = (v.right/100 * 0.7).toString();
+
+  // Sensor dots pulse
+  ['front','back','left','right'].forEach(k => {
+    $('dot-'+k).style.opacity = (0.3 + v[k]/100 * 0.7).toString();
+    $('dot-'+k).setAttribute('r', (4 + v[k]/100 * 4).toString());
+  });
+
+  // Person tilt in SVG
+  const tiltX = (v.left - v.right) * 0.15;
+  const tiltY = (v.front - v.back) * 0.05;
+  $('person').style.transform = `rotate(${tiltX}deg) translateY(${tiltY}px)`;
+  $('person').style.transformOrigin = '160px 225px';
+
+  // Mouth expression
+  const mouth = $('mouth');
+  if (p.cls === 'good') mouth.setAttribute('d','M 152 118 Q 160 126 168 118');
+  else if (p.cls === 'bad') mouth.setAttribute('d','M 152 122 Q 160 116 168 122');
+  else mouth.setAttribute('d','M 152 119 Q 160 122 168 119');
+
+  // Status banner
+  const banner = $('status-banner');
+  $('status-icon').textContent = p.icon;
+  $('status-title').textContent = p.status;
+  $('status-sub').textContent = p.detail;
+  banner.style.borderColor = p.cls==='good' ? 'var(--green)' : p.cls==='bad' ? 'var(--red)' : p.cls==='warn' ? 'var(--yellow)' : 'var(--border)';
+
+  // Posture tag
+  const tag = $('posture-tag');
+  const tagColors = {
+    good: ['var(--green)','var(--green-lt)'],
+    warn: ['var(--yellow)','var(--yellow-lt)'],
+    bad:  ['var(--red)','var(--red-lt)'],
+    '':   ['var(--muted)','var(--bg)']
+  };
+  const [tc, tbg] = tagColors[p.cls] || tagColors[''];
+  tag.style.color = tc; tag.style.borderColor = tc; tag.style.background = tbg;
+  tag.textContent = p.icon + ' ' + p.status;
+  $('posture-detail').textContent = p.detail;
+
+  // LEDs
+  const now = Date.now();
+  const red  = $('led-red');
+  const grn  = $('led-green');
+  const yel  = $('led-yellow');
+  red.className = 'led'; grn.className = 'led'; yel.className = 'led';
+  if (!isNowSeated) { /* all off */ }
+  else if (p.cls==='bad' || sitMinutes >= 45)  red.className = 'led on-red';
+  else if (p.cls==='warn' || sitMinutes >= 30) yel.className = 'led on-yellow';
+  else                                         grn.className = 'led on-green';
+
+  // Buzzer
+  const bz = $('buzzer');
+  const bt = $('buzzer-txt');
+  if (!isNowSeated) { bz.className='buzzer-indicator'; bt.textContent='Silent'; }
+  else if (sitMinutes>=45 && now-lastBuzz>5000) {
+    bz.className='buzzer-indicator active'; bt.textContent='SOS Alert!';
+    alerts++; $('stat-alerts').textContent=alerts;
+    addSerial('ALERT: Stand up! Sitting too long!','err');
+    lastBuzz=now;
+    setTimeout(()=>{ bz.className='buzzer-indicator'; bt.textContent='Silent'; },1000);
+  } else if (p.cls==='bad' && now-lastBuzz>8000) {
+    bz.className='buzzer-indicator active'; bt.textContent='Posture!';
+    addSerial('ALERT: Fix your posture!','warn');
+    lastBuzz=now;
+    setTimeout(()=>{ bz.className='buzzer-indicator'; bt.textContent='Silent'; },600);
+  } else if (p.cls!=='bad' && sitMinutes<45) { bz.className='buzzer-indicator'; bt.textContent='Silent'; }
+
+  // History dots
+  if (isNowSeated) {
+    const cls = p.cls==='good'?'good' : p.cls==='warn'?'warn' : p.cls==='bad'?'bad':'';
+    historyDots.push(cls);
+    if (historyDots.length > 16) historyDots.shift();
+    const hr = $('history-row');
+    hr.innerHTML = historyDots.map(c=>`<div class="h-dot ${c}"></div>`).join('');
+  }
+
+  // Metric cards color
+  updateMetricCards(p, sitMinutes);
+}
+
+function updateMetricCards(p, mins) {
+  // nothing extra for now, metrics updated inline
+}
+
+// ── LCD UPDATE ────────────────────────────────────────────────
+function updateLCD() {
+  const v = getVals();
+  const p = analyzePosture(v);
+  const total = avg4(v);
+  const isSeatedNow = total >= 25;
+  const pages = [
+    [p.status.padEnd(16).slice(0,16), p.detail.padEnd(16).slice(0,16)],
+    [`SitTime: ${sitMinutes} min`.padEnd(16), `Score: ${$('score-num').textContent}%`.padEnd(16)],
+    [`F:${v.front}% B:${v.back}%`.padEnd(16), `L:${v.left}% R:${v.right}%`.padEnd(16)],
+    ['ChairIQ v1.0   ', `Stnd:${stands} Alt:${alerts}`.padEnd(16)],
+  ];
+  if (!isSeatedNow) {
+    $('lcd1').textContent = '  ChairIQ v1.0  ';
+    $('lcd2').textContent = '   Waiting...   ';
+    return;
+  }
+  if (sitMinutes >= 45) {
+    $('lcd1').textContent = '! STAND UP NOW !';
+    $('lcd2').textContent = `Sat ${sitMinutes}min  MOVE!`;
+    return;
+  }
+  const pg = pages[lcdPage % pages.length];
+  $('lcd1').textContent = pg[0];
+  $('lcd2').textContent = pg[1];
+  lcdPage++;
+}
+
+// ── SERIAL LOG ────────────────────────────────────────────────
+const serialLines = [];
+function addSerial(msg, cls='') {
+  serialLines.push({ msg, cls });
+  if (serialLines.length > 30) serialLines.shift();
+  const box = $('serial-log');
+  box.innerHTML = serialLines.map(l=>`<div class="${l.cls?'s-'+l.cls:''}">${l.msg}</div>`).join('');
+  box.scrollTop = box.scrollHeight;
+}
+
+// ── CLOCK ─────────────────────────────────────────────────────
+function updateClock() {
+  const d = new Date();
+  $('hdr-time').textContent =
+    String(d.getHours()).padStart(2,'0') + ':' +
+    String(d.getMinutes()).padStart(2,'0') + ':' +
+    String(d.getSeconds()).padStart(2,'0');
+}
+
+// ── SIMULATION CONTROLS ───────────────────────────────────────
+function toggleSim() {
+  running = !running;
+  $('btn-start').textContent = running ? '⏸ Pause' : '▶ Start';
+  $('btn-start').className   = running ? 'btn danger' : 'btn primary';
+  if (running) {
+    addSerial('Simulation started.', 'ok');
+    simTimer = setInterval(() => {
+      update();
+    }, 300);
+    lcdTimer = setInterval(updateLCD, 1500);
+  } else {
+    clearInterval(simTimer);
+    clearInterval(lcdTimer);
+    addSerial('Simulation paused.', 'warn');
+  }
+}
+
+function resetSim() {
+  clearInterval(simTimer); clearInterval(lcdTimer);
+  running=false; seated=false; sitStart=null; sitMinutes=0;
+  stands=0; alerts=0; scoreHistory=[]; historyDots=[]; lcdPage=0;
+  $('btn-start').textContent='▶ Start'; $('btn-start').className='btn primary';
+  ['front','back','left','right'].forEach(k => {
+    $('s-'+k).value = 0; 
+  });
+  $('history-row').innerHTML='<span style="font-size:10px;color:var(--muted)">No data yet</span>';
+  $('stat-stands').textContent='0'; $('stat-alerts').textContent='0'; $('stat-avg').textContent='—';
+  addSerial('System reset.','warn');
+  update();
+}
+
+function setPosture(type) {
+  const presets = {
+    'good':       { front:72, back:65, left:68, right:70 },
+    'hunch':      { front:88, back:30, left:60, right:60 },
+    'slouch':     { front:25, back:85, left:55, right:55 },
+    'lean-left':  { front:60, back:55, left:85, right:28 },
+    'lean-right': { front:60, back:55, left:28, right:85 },
+    'empty':      { front:8,  back:8,  left:8,  right:8  },
+  };
+  const p = presets[type];
+  if (!p) return;
+  Object.keys(p).forEach(k => { $('s-'+k).value = p[k]; });
+  update();
+  addSerial(`Posture set: ${type.toUpperCase()}`, '');
+}
+
+// ── SERIAL AUTO LOG ───────────────────────────────────────────
+setInterval(() => {
+  if (!running) return;
+  const v = getVals();
+  const p = analyzePosture(v);
+  addSerial(`F:${v.front} B:${v.back} L:${v.left} R:${v.right} | ${p.status} | ${sitMinutes}min`);
+}, 2000);
+
+// ── INIT ──────────────────────────────────────────────────────
+updateClock();
+setInterval(updateClock, 1000);
+update();
+</script>
+</body>
+</html>
